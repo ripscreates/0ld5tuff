@@ -1,0 +1,147 @@
+* some old program that i made in assembly for MH863sumtinsumtin
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$0160
+	FCB	$4A, $6F, $62, $5F, $31, $0D, $04
+*		 J    o    b    _    1    CR   EOT
+
+	ORG	$0180
+	FCB	$4A, $6F, $62, $5F, $32, $0D, $04
+*		 J    o    b    _    2    CR   EOT
+
+	ORG	$01A0
+	FCB	$4A, $6F, $62, $5F, $33, $0D, $04
+*		 J    o    b    _    3    CR   EOT
+
+	ORG	$0140
+	FCB	$52, $65, $61, $64, $79, $2E, $0D, $04
+*		 R    e    a    d    y     .   CR   EOT
+
+	ORG	$016E
+	FCB	$57, $65, $6C, $63, $6F, $6D, $65, $21, $0D, $04
+*		 W    e    l    c    o    m    e    !    CR   EOT
+
+	ORG	$018E
+	FCB	$50, $75, $73, $68, $20, $31, $2D, $33, $2C, $20,  $45, $78, $69, $74, $3D, $30, $04
+*		 P    u    s    h    Sp   1    -    3    ,    Sp    E    x    i    t    =    0   EOT	
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+ADRS_1	EQU	$0160	String for Job_1
+ADRS_2	EQU	$0180	String for Job_2
+ADRS_3	EQU	$01A0	String for Job_3
+PROMPT	EQU	$0140	Ready prompt
+WEL	EQU	$016E	Welcome
+INST	EQU	$018E	Instruction Manual
+
+OUTSTRG	EQU	$FFC7	int utility - displays string
+INCHAR	EQU	$FFCD	int utility - reads keyboard
+
+START	EQU	$01D3	Starting message
+JOB_1	EQU	$0167	Location for Job_1 Program
+JOB_2	EQU	$0187	Location for Job_2 Program
+JOB_3	EQU	$01A7	Location for Job_3 Program
+CNTDWN	EQU	$01C0	CountDown Program
+
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$01D3	
+START	LDX	#WEL	Welcome string
+	JSR	OUTSTRG Prints string to screen
+	LDX	#INST	Instruction Manual string
+	JSR	OUTSTRG Prints string to screen
+	RTS		Return to caller program
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$01C0	CountDown Subroutine
+CNTDWN	LDAA	#$2A	Load (.) into AccA
+	JSR	$FFB8	print AccA onto screen
+	LDAA	#$20	Load (Space) into AccA
+	JSR	$FFB8	print AccA onto screen
+	JSR	ONESEC	go to countdown program
+	DECB		One less second to do.
+	BNE	CNTDWN	Until all seconds are done.
+	RTS		Return to caller program
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$0167	Job_1 Program
+JOB_1	LDAB	#$05	AccB counter set to 5
+	JSR	CNTDWN	Start CountDown program
+	RTS		Return to caller program
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$0187	Job_2 Program
+JOB_2	LDAB	#$0A	AccB counter set to 10
+	JSR	CNTDWN	Start CountDown program
+	RTS		Return to caller program
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$01A7	Job_3 Program
+JOB_3	LDAB	#$0E	AccB counter set to 15
+	JSR	CNTDWN	Start CountDown program
+	RTS		Return to caller program
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$01EC	ONESEC subroutine
+ONESEC	JSR	HALFSEC Start HALFSEC subroutine
+	JSR	HALFSEC	2 half-secs = 1 sec
+	RTS		Return to caller program
+
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$01F3	HALFSEC subroutine
+HALFSEC	PSHX		Save X register in stack memory
+	LDX	#$D902	Load 55,554 into a counter
+
+DELAY	DEX		Two decrements and two increments
+	INX		in this section of the program
+	DEX		add additional cycles to the loop
+	INX		to use up more time.
+	DEX		There is only one net decrement.
+	BNE	DELAY	Until count is zero.
+
+	PULX		Restore X from stack memory
+	RTS		Return to caller program
+*-------------------------------------------------------
+*LABEL	MNEM.	OPCODE	COMMENT
+	ORG	$0100	Main Program
+	JSR	START	Prints Welcome strings
+JOB123	LDX	#PROMPT	Prints Ready String
+	JSR	OUTSTRG	Show Prompt
+	JSR	INCHAR	Wait for keyboard input
+
+
+FWD	CMPA	#$31	Key = 1 ?
+	BNE	FWD_2	If key not = 1.
+
+	LDX	#ADRS_1	Point at "Job_1" string.
+	JSR	OUTSTRG	Show string.
+	JSR	JOB_1	Begin Job_1 Program.
+
+FWD_2	CMPA	#$32	Key = 2 ?
+	BNE	FWD_3	If not = 2.
+
+	LDX	#ADRS_2	Point at "Job_2" string.
+	JSR	OUTSTRG	Show string.
+	JSR	JOB_2	Begin Job_2 Program.
+
+FWD_3	CMPA	#$33	Key = 3 ?
+	BNE	EXIT	If not = 3.
+
+	LDX	#ADRS_3	Point at "Job_3" string.
+	JSR	OUTSTRG	Show string.
+	JSR	JOB_3	Begin Job_3 Program.
+
+EXIT	CMPA	#$30	Key = 0 ?
+	BNE	LOOP	If not = 0.
+	SWI
+
+LOOP	JMP	JOB123	Loop Program
+*-------------------------------------------------------
+*END OF PROGRAM
